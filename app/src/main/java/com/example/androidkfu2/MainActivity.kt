@@ -217,14 +217,15 @@ fun InputField(
 ){
     OutlinedTextField(
         value = value,
-        onValueChange = onValChange,
+        onValueChange = {onValChange(it.take(18))},
         label =
         {
             Text(text = label)
         },
         placeholder = {
             Text(text = placeholder)
-        }
+        },
+        singleLine = true
     )
 }
 
