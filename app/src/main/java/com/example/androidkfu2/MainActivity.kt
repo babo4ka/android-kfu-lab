@@ -1,5 +1,6 @@
 package com.example.androidkfu2
 
+import android.graphics.pdf.PdfDocument.Page
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,17 +15,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +42,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidkfu2.ui.theme.AndroidKfu2Theme
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +67,7 @@ class MainActivity : ComponentActivity() {
 fun MainPage(){
 
     val pagerState = rememberPagerState (pageCount = {2})
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -72,11 +81,34 @@ fun MainPage(){
 
             Spacer(modifier = Modifier.height(50.dp))
 
+            val tabs = listOf("Log in", "Registration")
+            var tabIndex by remember { mutableIntStateOf(0) }
+
+            TabRow(selectedTabIndex = tabIndex) {
+                tabs.forEachIndexed{ index, title ->
+                    Tab(selected = tabIndex == index,
+                        onClick = {
+                            tabIndex = index
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        }) {
+                        Text(text = title)
+                    }
+                }
+            }
+
             HorizontalPager(state = pagerState) {
                     page ->
                         when(page){
-                            0->LoginPage()
-                            1->RegistrationPage()
+                            0->{
+                                LoginPage()
+                                tabIndex = 0
+                            }
+                            1->{
+                                RegistrationPage()
+                                tabIndex = 1
+                            }
                         }
             }
         }
@@ -164,11 +196,13 @@ fun RegistrationPage(){
                 bottomStart = 16.dp,
                 bottomEnd = 8.dp
             )
-        )){
+        )
+    ){
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(48.dp)) {
+                .padding(start = 48.dp, end = 48.dp, top = 48.dp)
+        ) {
 
 
             InputField(value = userName,
