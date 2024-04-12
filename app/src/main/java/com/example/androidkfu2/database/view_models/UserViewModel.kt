@@ -16,7 +16,8 @@ class UserViewModel(val dao: UserDao): ViewModel() {
 
             user.userLogin = newUserLogin
             user.password = newUserPassword
-
+            println(newUserLogin)
+            println(newUserPassword)
             dao.insert(user)
         }
 

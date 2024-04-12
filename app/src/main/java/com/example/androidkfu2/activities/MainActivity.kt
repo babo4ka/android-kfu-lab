@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.example.androidkfu2.R
 import com.example.androidkfu2.database.databases.UsersDatabase
+import com.example.androidkfu2.database.entities.User
 import com.example.androidkfu2.database.view_models.UserViewModel
 import com.example.androidkfu2.database.view_models.factories.UserViewModelFactory
 import com.example.androidkfu2.ui.theme.AndroidKfu2Theme
@@ -54,8 +55,7 @@ class MainActivity : ComponentActivity() {
 
         val dao = UsersDatabase.getInstance(application).userDao
         val viewModelFactory = UserViewModelFactory(dao)
-        val viewModel = ViewModelProvider(this, viewModelFactory).get(UserViewModel::class.java)
-
+        val uvm = ViewModelProvider(this, viewModelFactory).get(UserViewModel::class.java)
 
         setContent {
             AndroidKfu2Theme {
@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainPage()
+                    MainPage(uvm = uvm)
                 }
             }
         }
@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainPage(){
+fun MainPage(uvm: UserViewModel?){
 
     val pagerState = rememberPagerState (pageCount = {2})
     val scope = rememberCoroutineScope()
@@ -113,11 +113,11 @@ fun MainPage(){
                     page ->
                         when(page){
                             0->{
-                                LoginPage()
+                                LoginPage(uvm= uvm)
                                 tabIndex = 0
                             }
                             1->{
-                                RegistrationPage()
+                                RegistrationPage(uvm= uvm)
                                 tabIndex = 1
                             }
                         }
@@ -128,7 +128,7 @@ fun MainPage(){
 
 
 @Composable
-fun LoginPage(){
+fun LoginPage(uvm: UserViewModel?){
 
     var userName by remember {
         mutableStateOf("")
@@ -174,8 +174,11 @@ fun LoginPage(){
             Spacer(Modifier.height(10.dp))
 
             TextButton(onClick = {
-                val toast = Toast.makeText(context, userName, Toast.LENGTH_SHORT)
-                toast.show()
+                val u = uvm?.dao?.get(userName)?.value
+                if(u == null){
+                    val toast = Toast.makeText(context, "No account with entered username", Toast.LENGTH_SHORT)
+                    toast.show()
+                }
             },
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -192,7 +195,7 @@ fun LoginPage(){
 
 
 @Composable
-fun RegistrationPage(){
+fun RegistrationPage(uvm: UserViewModel?){
     var userName by remember {
         mutableStateOf("")
     }
@@ -201,6 +204,13 @@ fun RegistrationPage(){
         mutableStateOf("")
     }
 
+    var confirmPassword by remember {
+        mutableStateOf("")
+    }
+
+    val context = LocalContext.current
+
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -235,16 +245,32 @@ fun RegistrationPage(){
                     password = it
                 })
 
-            InputField(value = password,
+            InputField(value = confirmPassword,
                 label = "Confirm password",
                 placeholder = "Confirm password",
                 onValChange = {
-                    password = it
+                    confirmPassword = it
                 })
 
             Spacer(Modifier.height(10.dp))
 
-            TextButton(onClick = { /*TODO*/ },
+            TextButton(onClick = {
+                scope.launch {
+                    if(password != confirmPassword){
+                        val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
+                        toast.show()
+                    }else{
+                        var u = uvm?.dao?.get(userName)?.value
+                        if(u == null){
+                            uvm?.addUser(userName, password)
+                        }else{
+                            val toast = Toast.makeText(context, "User already exists", Toast.LENGTH_SHORT)
+                            toast.show()
+                        }
+                    }
+                }
+
+            },
                 Modifier
                     .align(Alignment.CenterHorizontally)
                     .background(color = Color.Black)
@@ -283,18 +309,18 @@ fun InputField(
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun LoginPagePreview(){
-    LoginPage()
+    LoginPage(null)
 }
 
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun RegistrationPagePreview(){
-    RegistrationPage()
+    RegistrationPage(null)
 }
 
 
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun MainPagePreview(){
-    MainPage()
+    MainPage(null)
 }

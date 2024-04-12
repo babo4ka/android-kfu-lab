@@ -12,7 +12,7 @@ import com.example.androidkfu2.database.entities.User
 interface UserDao {
 
     @Insert
-    fun insert(user: User)
+    suspend fun insert(user: User)
 
     @Update
     fun update(user: User)
@@ -20,9 +20,11 @@ interface UserDao {
     @Delete
     fun delete(user: User)
 
-//    @Query("SELECT * FROM users WHERE userLogin = :login")
-//    fun get(login: String) : LiveData<User>
-//
+
+
+    @Query("SELECT * FROM users WHERE userLogin = :login")
+    fun get(login: String) : LiveData<User>
+
 //    @Query("SELECT * FROM users")
 //    fun getAll(): List<LiveData<User>>
 }
