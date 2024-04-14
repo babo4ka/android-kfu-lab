@@ -174,11 +174,11 @@ fun LoginPage(uvm: UserViewModel?){
             Spacer(Modifier.height(10.dp))
 
             TextButton(onClick = {
-                val u = uvm?.dao?.get(userName)?.value
-                if(u == null){
-                    val toast = Toast.makeText(context, "No account with entered username", Toast.LENGTH_SHORT)
-                    toast.show()
-                }
+                println("name to search $userName")
+                val u = uvm?.getUser(userName)
+                println(u)
+                val toast = Toast.makeText(context, u?.userLogin, Toast.LENGTH_SHORT)
+                toast.show()
             },
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -263,6 +263,9 @@ fun RegistrationPage(uvm: UserViewModel?){
                         var u = uvm?.dao?.get(userName)?.value
                         if(u == null){
                             uvm?.addUser(userName, password)
+                            val toast = Toast.makeText(context, "Registered", Toast.LENGTH_SHORT)
+                            toast.show()
+                            println("name to register $userName")
                         }else{
                             val toast = Toast.makeText(context, "User already exists", Toast.LENGTH_SHORT)
                             toast.show()
