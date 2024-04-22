@@ -25,16 +25,18 @@ class UserViewModel(val dao: UserDao): ViewModel() {
 
 
     fun getUser(userLogin: String): User? {
-        val usrs = dao.getAll().value
-        println(usrs?.size)
+//        val usrs = dao.getAll().value
+//        println(usrs?.size)
+//
+//        if (usrs != null) {
+//            for(u in usrs){
+//                println(u.userLogin)
+//            }
+//        }
 
-        if (usrs != null) {
-            for(u in usrs){
-                println(u.userLogin)
-            }
-        }
-
-        return null
+        val usr = dao.get(userLogin).value
+        println(usr?.userLogin)
+        return usr
     }
 
 

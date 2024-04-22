@@ -23,9 +23,9 @@ interface UserDao {
 
 
 
-    @Query("SELECT * FROM users WHERE userLogin = :login")
+    @Query("SELECT * FROM users_table WHERE userLogin = :login")
     fun get(login: String) : LiveData<User>
 
-    @Query("SELECT * FROM users")
+    @Query("SELECT * FROM users_table")
     fun getAll(): LiveData<List<User>>
 }

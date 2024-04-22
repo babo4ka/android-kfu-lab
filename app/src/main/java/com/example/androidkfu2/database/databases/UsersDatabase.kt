@@ -22,9 +22,9 @@ abstract class UsersDatabase: RoomDatabase() {
 
                 if(instance == null){
                     instance = Room.databaseBuilder(
-                        context.applicationContext,
+                        context,
                         UsersDatabase::class.java,
-                        "users"
+                        "users_database"
                     ).build()
 
                     INSTANCE = instance
