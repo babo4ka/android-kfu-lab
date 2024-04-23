@@ -46,6 +46,7 @@ import com.example.androidkfu2.database.entities.User
 import com.example.androidkfu2.database.view_models.UserViewModel
 import com.example.androidkfu2.database.view_models.factories.UserViewModelFactory
 import com.example.androidkfu2.ui.theme.AndroidKfu2Theme
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -140,6 +141,8 @@ fun LoginPage(uvm: UserViewModel?){
 
     val context = LocalContext.current
 
+    val scope = rememberCoroutineScope()
+
     Box(modifier = Modifier
         .fillMaxSize()
         .padding(28.dp)
@@ -174,11 +177,14 @@ fun LoginPage(uvm: UserViewModel?){
             Spacer(Modifier.height(10.dp))
 
             TextButton(onClick = {
-                println("name to search $userName")
-                val u = uvm?.getUser(userName)
-                println(u)
-                val toast = Toast.makeText(context, u?.userLogin, Toast.LENGTH_SHORT)
-                toast.show()
+                scope.launch {
+                    println("name to search $userName")
+                    val u = uvm?.getUser(userName)
+                    println("user in activity $u")
+                    val toast = Toast.makeText(context, u?.userLogin, Toast.LENGTH_SHORT)
+                    toast.show()
+                }
+
             },
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -260,7 +266,7 @@ fun RegistrationPage(uvm: UserViewModel?){
                         val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
                         toast.show()
                     }else{
-                        var u = uvm?.dao?.get(userName)?.value
+                        var u = uvm?.dao?.get(userName)
                         if(u == null){
                             uvm?.addUser(userName, password)
                             val toast = Toast.makeText(context, "Registered", Toast.LENGTH_SHORT)

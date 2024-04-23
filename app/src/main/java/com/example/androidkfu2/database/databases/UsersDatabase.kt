@@ -24,7 +24,7 @@ abstract class UsersDatabase: RoomDatabase() {
                     instance = Room.databaseBuilder(
                         context,
                         UsersDatabase::class.java,
-                        "users_database"
+                        "users"
                     ).build()
 
                     INSTANCE = instance

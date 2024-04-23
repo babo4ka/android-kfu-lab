@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidkfu2.database.daos.UserDao
 import com.example.androidkfu2.database.entities.User
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class UserViewModel(val dao: UserDao): ViewModel() {
@@ -24,19 +26,13 @@ class UserViewModel(val dao: UserDao): ViewModel() {
     }
 
 
-    fun getUser(userLogin: String): User? {
-//        val usrs = dao.getAll().value
-//        println(usrs?.size)
-//
-//        if (usrs != null) {
-//            for(u in usrs){
-//                println(u.userLogin)
-//            }
-//        }
+    suspend fun getUser(userLogin: String): User? {
+        val res = viewModelScope.async {
+            dao.get(userLogin)
+        }
 
-        val usr = dao.get(userLogin).value
-        println(usr?.userLogin)
-        return usr
+        return res.await()
+
     }
 
 
