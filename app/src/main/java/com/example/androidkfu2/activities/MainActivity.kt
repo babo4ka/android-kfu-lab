@@ -194,7 +194,7 @@ fun LoginPage(uvm: UserViewModel?){
                                 Toast.LENGTH_SHORT)
                             toast.show()
                         }else{
-                            val intent = Intent(context, GreetingActivity::class.java)
+                            val intent = Intent(context, WeatherActivity::class.java)
                             intent.putExtra("userName", userName)
                             startActivity(context, intent, null)
                         }
