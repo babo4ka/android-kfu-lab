@@ -1,5 +1,6 @@
 package com.example.androidkfu2.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -37,8 +39,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.androidkfu2.R
 import com.example.androidkfu2.database.databases.UsersDatabase
@@ -78,7 +82,6 @@ fun MainPage(uvm: UserViewModel?){
 
     val pagerState = rememberPagerState (pageCount = {2})
     val scope = rememberCoroutineScope()
-
 
 
     Box(modifier = Modifier
@@ -163,6 +166,7 @@ fun LoginPage(uvm: UserViewModel?){
             InputField(value = userName,
                 label = "Username",
                 placeholder = "Enter username",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 onValChange = {
                     userName = it
                 })
@@ -170,6 +174,7 @@ fun LoginPage(uvm: UserViewModel?){
             InputField(value = password,
                 label = "Password",
                 placeholder = "Enter password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
                     password = it
                 })
@@ -178,11 +183,22 @@ fun LoginPage(uvm: UserViewModel?){
 
             TextButton(onClick = {
                 scope.launch {
-                    println("name to search $userName")
                     val u = uvm?.getUser(userName)
-                    println("user in activity $u")
-                    val toast = Toast.makeText(context, u?.userLogin, Toast.LENGTH_SHORT)
-                    toast.show()
+                    if(u == null){
+                        val toast = Toast.makeText(context, "No account with entered username",
+                            Toast.LENGTH_SHORT)
+                        toast.show()
+                    }else{
+                        if(u.password != password){
+                            val toast = Toast.makeText(context, "Incorrect password!!",
+                                Toast.LENGTH_SHORT)
+                            toast.show()
+                        }else{
+                            val intent = Intent(context, GreetingActivity::class.java)
+                            intent.putExtra("userName", userName)
+                            startActivity(context, intent, null)
+                        }
+                    }
                 }
 
             },
@@ -240,6 +256,7 @@ fun RegistrationPage(uvm: UserViewModel?){
             InputField(value = userName,
                 label = "Username",
                 placeholder = "Create username",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 onValChange = {
                     userName = it
                 })
@@ -247,6 +264,7 @@ fun RegistrationPage(uvm: UserViewModel?){
             InputField(value = password,
                 label = "Password",
                 placeholder = "Create password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
                     password = it
                 })
@@ -254,6 +272,7 @@ fun RegistrationPage(uvm: UserViewModel?){
             InputField(value = confirmPassword,
                 label = "Confirm password",
                 placeholder = "Confirm password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
                     confirmPassword = it
                 })
@@ -266,16 +285,10 @@ fun RegistrationPage(uvm: UserViewModel?){
                         val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
                         toast.show()
                     }else{
-                        var u = uvm?.dao?.get(userName)
-                        if(u == null){
-                            uvm?.addUser(userName, password)
-                            val toast = Toast.makeText(context, "Registered", Toast.LENGTH_SHORT)
-                            toast.show()
-                            println("name to register $userName")
-                        }else{
-                            val toast = Toast.makeText(context, "User already exists", Toast.LENGTH_SHORT)
-                            toast.show()
-                        }
+                        uvm?.addUser(userName, password)
+                        val intent = Intent(context, GreetingActivity::class.java)
+                        intent.putExtra("userName", userName)
+                        startActivity(context, intent, null)
                     }
                 }
 
@@ -298,9 +311,11 @@ fun InputField(
     value: String,
     label: String,
     placeholder: String,
-    onValChange: (String) -> Unit
+    onValChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions
 ){
     OutlinedTextField(
+        keyboardOptions = keyboardOptions,
         value = value,
         onValueChange = {onValChange(it.take(18))},
         label =

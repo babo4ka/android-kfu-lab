@@ -10,10 +10,7 @@ import kotlinx.coroutines.launch
 
 class UserViewModel(val dao: UserDao): ViewModel() {
 
-//    var newUserLogin = ""
-//    var newUserPassword = ""
 
-    val users = dao.getAll()
 
     fun addUser(newUserLogin: String, newUserPassword: String){
         viewModelScope.launch {
@@ -26,7 +23,7 @@ class UserViewModel(val dao: UserDao): ViewModel() {
     }
 
 
-    suspend fun getUser(userLogin: String): User? {
+    suspend fun getUser(userLogin: String): User {
         val res = viewModelScope.async {
             dao.get(userLogin)
         }
