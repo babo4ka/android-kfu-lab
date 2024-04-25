@@ -277,7 +277,7 @@ fun RegistrationPagePreview(){
 }
 
 
-@Preview(showSystemUi = true, showBackground = true)
+@Preview
 @Composable
 fun MainPagePreview(){
     MainPage()
