@@ -281,14 +281,20 @@ fun RegistrationPage(uvm: UserViewModel?){
 
             TextButton(onClick = {
                 scope.launch {
-                    if(password != confirmPassword){
-                        val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
+                    val u = uvm?.getUser(userName)
+                    if (u != null){
+                        val toast = Toast.makeText(context, "User $userName already exists", Toast.LENGTH_SHORT)
                         toast.show()
                     }else{
-                        uvm?.addUser(userName, password)
-                        val intent = Intent(context, GreetingActivity::class.java)
-                        intent.putExtra("userName", userName)
-                        startActivity(context, intent, null)
+                        if(password != confirmPassword){
+                            val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
+                            toast.show()
+                        }else{
+                            uvm?.addUser(userName, password)
+                            val intent = Intent(context, GreetingActivity::class.java)
+                            intent.putExtra("userName", userName)
+                            startActivity(context, intent, null)
+                        }
                     }
                 }
 
