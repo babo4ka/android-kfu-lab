@@ -1,7 +1,8 @@
-package com.example.androidkfu2
+package com.example.androidkfu2.activities
 
-import android.graphics.pdf.PdfDocument.Page
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -15,9 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -34,20 +35,33 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.ViewModelProvider
+import com.example.androidkfu2.R
+import com.example.androidkfu2.database.databases.UsersDatabase
+import com.example.androidkfu2.database.entities.User
+import com.example.androidkfu2.database.view_models.UserViewModel
+import com.example.androidkfu2.database.view_models.factories.UserViewModelFactory
 import com.example.androidkfu2.ui.theme.AndroidKfu2Theme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val dao = UsersDatabase.getInstance(application).userDao
+        val viewModelFactory = UserViewModelFactory(dao)
+        val uvm = ViewModelProvider(this, viewModelFactory).get(UserViewModel::class.java)
+
         setContent {
             AndroidKfu2Theme {
                 // A surface container using the 'background' color from the theme
@@ -55,7 +69,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainPage()
+                    MainPage(uvm = uvm)
                 }
             }
         }
@@ -64,10 +78,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainPage(){
+fun MainPage(uvm: UserViewModel?){
 
     val pagerState = rememberPagerState (pageCount = {2})
     val scope = rememberCoroutineScope()
+
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -102,11 +117,11 @@ fun MainPage(){
                     page ->
                         when(page){
                             0->{
-                                LoginPage()
+                                LoginPage(uvm= uvm)
                                 tabIndex = 0
                             }
                             1->{
-                                RegistrationPage()
+                                RegistrationPage(uvm= uvm)
                                 tabIndex = 1
                             }
                         }
@@ -117,7 +132,7 @@ fun MainPage(){
 
 
 @Composable
-fun LoginPage(){
+fun LoginPage(uvm: UserViewModel?){
 
     var userName by remember {
         mutableStateOf("")
@@ -126,6 +141,10 @@ fun LoginPage(){
     var password by remember {
         mutableStateOf("")
     }
+
+    val context = LocalContext.current
+
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -147,6 +166,7 @@ fun LoginPage(){
             InputField(value = userName,
                 label = "Username",
                 placeholder = "Enter username",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 onValChange = {
                     userName = it
                 })
@@ -154,13 +174,34 @@ fun LoginPage(){
             InputField(value = password,
                 label = "Password",
                 placeholder = "Enter password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
                     password = it
                 })
 
             Spacer(Modifier.height(10.dp))
 
-            TextButton(onClick = { /*TODO*/ },
+            TextButton(onClick = {
+                scope.launch {
+                    val u = uvm?.getUser(userName)
+                    if(u == null){
+                        val toast = Toast.makeText(context, "No account with entered username",
+                            Toast.LENGTH_SHORT)
+                        toast.show()
+                    }else{
+                        if(u.password != password){
+                            val toast = Toast.makeText(context, "Incorrect password!!",
+                                Toast.LENGTH_SHORT)
+                            toast.show()
+                        }else{
+                            val intent = Intent(context, WeatherActivity::class.java)
+                            intent.putExtra("userName", userName)
+                            startActivity(context, intent, null)
+                        }
+                    }
+                }
+
+            },
                 Modifier
                     .align(Alignment.CenterHorizontally)
                     .background(color = Color.Black)
@@ -176,7 +217,7 @@ fun LoginPage(){
 
 
 @Composable
-fun RegistrationPage(){
+fun RegistrationPage(uvm: UserViewModel?){
     var userName by remember {
         mutableStateOf("")
     }
@@ -185,6 +226,13 @@ fun RegistrationPage(){
         mutableStateOf("")
     }
 
+    var confirmPassword by remember {
+        mutableStateOf("")
+    }
+
+    val context = LocalContext.current
+
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -208,6 +256,7 @@ fun RegistrationPage(){
             InputField(value = userName,
                 label = "Username",
                 placeholder = "Create username",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 onValChange = {
                     userName = it
                 })
@@ -215,20 +264,35 @@ fun RegistrationPage(){
             InputField(value = password,
                 label = "Password",
                 placeholder = "Create password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
                     password = it
                 })
 
-            InputField(value = password,
+            InputField(value = confirmPassword,
                 label = "Confirm password",
                 placeholder = "Confirm password",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValChange = {
-                    password = it
+                    confirmPassword = it
                 })
 
             Spacer(Modifier.height(10.dp))
 
-            TextButton(onClick = { /*TODO*/ },
+            TextButton(onClick = {
+                scope.launch {
+                    if(password != confirmPassword){
+                        val toast = Toast.makeText(context, "Passwords aren't match", Toast.LENGTH_SHORT)
+                        toast.show()
+                    }else{
+                        uvm?.addUser(userName, password)
+                        val intent = Intent(context, GreetingActivity::class.java)
+                        intent.putExtra("userName", userName)
+                        startActivity(context, intent, null)
+                    }
+                }
+
+            },
                 Modifier
                     .align(Alignment.CenterHorizontally)
                     .background(color = Color.Black)
@@ -247,9 +311,11 @@ fun InputField(
     value: String,
     label: String,
     placeholder: String,
-    onValChange: (String) -> Unit
+    onValChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions
 ){
     OutlinedTextField(
+        keyboardOptions = keyboardOptions,
         value = value,
         onValueChange = {onValChange(it.take(18))},
         label =
@@ -267,18 +333,18 @@ fun InputField(
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun LoginPagePreview(){
-    LoginPage()
+    LoginPage(null)
 }
 
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun RegistrationPagePreview(){
-    RegistrationPage()
+    RegistrationPage(null)
 }
 
 
 @Preview
 @Composable
 fun MainPagePreview(){
-    MainPage()
+    MainPage(null)
 }
