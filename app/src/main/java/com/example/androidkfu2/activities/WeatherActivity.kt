@@ -33,9 +33,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.androidkfu2.Res
 import com.example.androidkfu2.activities.ui.theme.AndroidKfu2Theme
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -109,7 +109,7 @@ fun WeatherPage(userName: String){
             Spacer(modifier = Modifier.height(80.dp))
 
             TextButton(onClick = {
-                 FetchWeather("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                 FetchPlace("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
             },
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -123,7 +123,7 @@ fun WeatherPage(userName: String){
     }
 }
 
-fun FetchWeather(url:String){
+fun FetchPlace(url:String){
     println("entered url $url")
     val request = Request.Builder()
         .url(url)
@@ -136,11 +136,39 @@ fun FetchWeather(url:String){
             println("error ${e.message}")
         }
         override fun onResponse(call: Call, response: Response) {
-            println(response.body()?.string())
+            val resp = response.body()?.string()
+            val gson = Gson()
+            val adapter = gson.getAdapter(object: TypeToken<List<Map<String, Any?>>>(){})
+            val model = adapter.fromJson(resp)
+
+            val lat = model[0].get("lat")
+            val lon = model[0].get("lon")
+
+            val weatherURL = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b"
+
+            FetchWeather(weatherURL)
         }
     })
 }
 
+fun FetchWeather(url:String){
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    val client = OkHttpClient()
+
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            println("error ${e.message}")
+        }
+        override fun onResponse(call: Call, response: Response) {
+            val resp = response.body()?.string()
+            println(resp)
+        }
+    })
+}
 
 
 @Composable
