@@ -1,4 +1,4 @@
-package com.example.androidkfu2.activities
+package com.example.androidkfu2.activities.weather
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,9 +34,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.androidkfu2.activities.InputField
 import com.example.androidkfu2.activities.ui.theme.AndroidKfu2Theme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -71,6 +76,21 @@ fun WeatherPage(userName: String){
     var cityEntered by remember {
         mutableStateOf("")
     }
+
+    var weather by remember {
+        mutableStateOf("")
+    }
+
+
+    var humidity by remember {
+        mutableStateOf("")
+    }
+
+    var seaLevel by remember{
+        mutableStateOf("")
+    }
+
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -109,7 +129,15 @@ fun WeatherPage(userName: String){
             Spacer(modifier = Modifier.height(80.dp))
 
             TextButton(onClick = {
-                 FetchPlace("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                scope.launch {
+                    val wd = WeatherData()
+                    wd.placeUrl = "http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b"
+                    val triple = fetchPlace("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                    println("in activity ${triple.first}")
+                }
+
+
+                 //FetchPlace("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
             },
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -119,56 +147,83 @@ fun WeatherPage(userName: String){
             ) {
                 Text(text = "Узнать погоду")
             }
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            Text(modifier = Modifier
+                .fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 22.sp,
+
+                text = "Weather: $weather \n" +
+                        "Humidity: $humidity \n" +
+                        "Sea level: $seaLevel")
         }
     }
 }
 
-fun FetchPlace(url:String){
-    println("entered url $url")
-    val request = Request.Builder()
-        .url(url)
+
+suspend fun fetchPlace(placeUrl: String) : Triple<String, String, String> = coroutineScope{
+    println("fetching place")
+    val placeRequest = Request.Builder()
+        .url(placeUrl)
         .build()
 
     val client = OkHttpClient()
 
-    client.newCall(request).enqueue(object : Callback {
+    var weatherUrl: String
+    var weather = ""
+    var humidity = ""
+    var seaLevel = ""
+
+
+    client.newCall(placeRequest).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             println("error ${e.message}")
         }
         override fun onResponse(call: Call, response: Response) {
+            println("place on response")
             val resp = response.body()?.string()
             val gson = Gson()
             val adapter = gson.getAdapter(object: TypeToken<List<Map<String, Any?>>>(){})
             val model = adapter.fromJson(resp)
 
-            val lat = model[0].get("lat")
-            val lon = model[0].get("lon")
+            val lat = model[0]["lat"]
+            val lon = model[0]["lon"]
 
-            val weatherURL = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b"
+            weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b"
 
-            FetchWeather(weatherURL)
+            val weatherRequest = Request.Builder()
+                .url(weatherUrl)
+                .build()
+
+            client.newCall(weatherRequest).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    println("error ${e.message}")
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    println("weather on response")
+                    val resp = response.body()?.string()
+                    val gson = Gson()
+                    val adapter = gson.getAdapter(object: TypeToken<Map<String, Any?>>(){})
+                    var model = adapter.fromJson(resp)
+                    model = adapter.fromJson(model["main"].toString())
+
+                    val far: Double = model["temp"].toString().toDouble()
+                    weather = ((far-32)/1.8).toString()
+                    humidity = model["humidity"].toString()
+                    seaLevel = model["sea_level"].toString()
+                }
+            })
         }
     })
+
+    println("returning...")
+
+    return@coroutineScope Triple(weather, humidity, seaLevel)
 }
 
-fun FetchWeather(url:String){
-    val request = Request.Builder()
-        .url(url)
-        .build()
-
-    val client = OkHttpClient()
-
-
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            println("error ${e.message}")
-        }
-        override fun onResponse(call: Call, response: Response) {
-            val resp = response.body()?.string()
-            println(resp)
-        }
-    })
-}
 
 
 @Composable

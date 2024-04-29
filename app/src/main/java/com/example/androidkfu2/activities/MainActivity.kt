@@ -45,12 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.androidkfu2.R
+import com.example.androidkfu2.activities.weather.WeatherActivity
 import com.example.androidkfu2.database.databases.UsersDatabase
-import com.example.androidkfu2.database.entities.User
 import com.example.androidkfu2.database.view_models.UserViewModel
 import com.example.androidkfu2.database.view_models.factories.UserViewModelFactory
 import com.example.androidkfu2.ui.theme.AndroidKfu2Theme
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
