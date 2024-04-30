@@ -67,6 +67,9 @@ class WeatherActivity : ComponentActivity() {
     }
 }
 
+enum class FetchStatus{
+    NONE, FETCHING, FETCHED
+}
 
 @Composable
 fun WeatherPage(userName: String){
@@ -75,29 +78,37 @@ fun WeatherPage(userName: String){
         mutableStateOf("")
     }
 
-    var weather = remember {
+    val weather = remember {
         mutableStateOf("")
     }
 
 
-    var humidity = remember {
+    val humidity = remember {
         mutableStateOf("")
     }
 
-    var seaLevel = remember{
+    val seaLevel = remember{
         mutableStateOf("")
     }
+
+    val fetched = remember {
+        mutableStateOf(FetchStatus.NONE)
+    }
+
 
     val scope = rememberCoroutineScope()
 
     fun fetchPlace(placeUrl: String){
         println("fetching place")
+        fetched.value = FetchStatus.FETCHING
         val placeRequest = Request.Builder()
             .url(placeUrl)
             .build()
 
         val client = OkHttpClient()
 
+        var resp: String? = null
+        val gson = Gson()
 
 
         client.newCall(placeRequest).enqueue(object : Callback {
@@ -107,13 +118,12 @@ fun WeatherPage(userName: String){
 
             override fun onResponse(call: Call, response: Response) {
                 println("place on response")
-                val resp = response.body()?.string()
-                val gson = Gson()
-                val adapter = gson.getAdapter(object : TypeToken<List<Map<String, Any?>>>() {})
-                val model = adapter.fromJson(resp)
+                resp = response.body()?.string()
+                val placeAdapter = gson.getAdapter(object : TypeToken<List<Map<String, Any?>>>() {})
+                val placeModel = placeAdapter.fromJson(resp)
                 println("place resp: $resp")
-                val lat = model[0]["lat"]
-                val lon = model[0]["lon"]
+                val lat = placeModel[0]["lat"]
+                val lon = placeModel[0]["lon"]
 
                 val weatherUrl =
                     "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b"
@@ -129,28 +139,18 @@ fun WeatherPage(userName: String){
 
                     override fun onResponse(call: Call, response: Response) {
                         println("weather on response: $weatherUrl")
-                        val resp2 = response.body()?.string()
-                        println("resp: $resp2")
-                        val gson2 = Gson()
-                        val adapter2 = gson2.getAdapter(object : TypeToken<Map<String, Any?>>() {})
-                        var model2 = adapter2.fromJson(resp2)
-                        println("model2 main: ${model2["main"].toString()}")
-                        model2 = adapter2.fromJson(model2.get("main").toString())
-                        println("hello")
-                        println(model2)
+                        resp = response.body()?.string()
+                        val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
+                        val weatherModel = weatherAdapter.fromJson(resp)["main"] as? Map<*, *>
 
-                        val far: Double = model2["temp"].toString().toDouble()
-                        weather.value = ((far - 32) / 1.8).toString()
-                        humidity.value = model2["humidity"].toString()
-                        seaLevel.value = model2["sea_level"].toString()
+                        if (weatherModel != null) {
+                            val kel: Double = weatherModel["temp"].toString().toDouble()
+                            weather.value = Math.round((kel - 273.15)).toString()
+                            humidity.value = weatherModel["humidity"].toString()
+                            seaLevel.value = weatherModel["sea_level"].toString()
 
-                        println("weather: ${model2["temp"].toString().toDouble()}")
-                        println("humidity: ${model2["humidity"].toString()}")
-                        println("sea level: ${model2["sea_level"].toString()}")
-//
-//                        println("weather: ${weather.value}")
-//                        println("humidity: ${humidity.value}")
-//                        println("sea level: ${seaLevel.value}")
+                            fetched.value = FetchStatus.FETCHED
+                        }
                     }
                 })
             }
@@ -213,15 +213,26 @@ fun WeatherPage(userName: String){
 
             Spacer(modifier = Modifier.height(50.dp))
 
-            Text(modifier = Modifier
-                .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 22.sp,
+            if(fetched.value == FetchStatus.FETCHED){
+                Text(modifier = Modifier
+                    .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 22.sp,
 
-                text = "Weather: ${weather.value} \n" +
-                        "Humidity: ${humidity.value} \n" +
-                        "Sea level: ${seaLevel.value}")
+                    text = "Weather: ${weather.value} °C \n" +
+                            "Humidity: ${humidity.value} % \n" +
+                            "Sea level: ${seaLevel.value}")
+            }else if(fetched.value == FetchStatus.FETCHING){
+                Text(modifier = Modifier
+                    .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 22.sp,
+
+                    text = "Fetching information about weather...")
+            }
+
         }
     }
 }
