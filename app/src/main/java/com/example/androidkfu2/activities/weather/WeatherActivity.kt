@@ -101,11 +101,44 @@ fun WeatherPage(userName: String){
     val scope = rememberCoroutineScope()
 
     val client = OkHttpClient()
-    var responseString: String? = null
+    var responseString: String?
     val gson = Gson()
 
-    fun fetchWeather(placeUrl: String){
+    fun fetchWeatherByCoord(weatherUrl: String) {
         fetched.value = FetchStatus.FETCHING
+        val weatherRequest = Request.Builder()
+            .url(weatherUrl)
+            .build()
+
+        client.newCall(weatherRequest).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println("error ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                responseString = response.body()?.string()
+                val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
+                val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
+
+                if (weatherModel != null) {
+                    val kel: Double = weatherModel["temp"].toString().toDouble()
+                    weather.value = Math.round((kel - 273.15)).toString()
+                    humidity.value = weatherModel["humidity"].toString()
+                    seaLevel.value = weatherModel["sea_level"].toString()
+
+                    fetched.value = FetchStatus.FETCHED
+                }
+
+                val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
+                val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
+                println(weatherInfoMap?.get("icon"))
+            }
+        })
+    }
+
+    fun fetchWeatherByCityName(placeUrl: String){
+        fetched.value = FetchStatus.FETCHING
+        println(placeUrl)
 
         val placeRequest = Request.Builder()
             .url(placeUrl)
@@ -119,40 +152,21 @@ fun WeatherPage(userName: String){
             override fun onResponse(call: Call, response: Response) {
                 responseString = response.body()?.string()
 
-                val placeAdapter = gson.getAdapter(object : TypeToken<List<Map<String, Any?>>>() {})
-                val placeModel = placeAdapter.fromJson(responseString)
+                val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
+                val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
 
-                val lat = placeModel[0]["lat"]
-                val lon = placeModel[0]["lon"]
+                if (weatherModel != null) {
+                    val kel: Double = weatherModel["temp"].toString().toDouble()
+                    weather.value = Math.round((kel - 273.15)).toString()
+                    humidity.value = weatherModel["humidity"].toString()
+                    seaLevel.value = weatherModel["sea_level"].toString()
 
-                getWeather("https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b")
-            }
+                    fetched.value = FetchStatus.FETCHED
+                }
 
-            private fun getWeather(weatherUrl: String) {
-                val weatherRequest = Request.Builder()
-                    .url(weatherUrl)
-                    .build()
-
-                client.newCall(weatherRequest).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        println("error ${e.message}")
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        responseString = response.body()?.string()
-                        val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
-                        val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
-
-                        if (weatherModel != null) {
-                            val kel: Double = weatherModel["temp"].toString().toDouble()
-                            weather.value = Math.round((kel - 273.15)).toString()
-                            humidity.value = weatherModel["humidity"].toString()
-                            seaLevel.value = weatherModel["sea_level"].toString()
-
-                            fetched.value = FetchStatus.FETCHED
-                        }
-                    }
-                })
+                val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
+                val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
+                println(weatherInfoMap?.get("icon"))
             }
         })
     }
@@ -197,7 +211,7 @@ fun WeatherPage(userName: String){
 
             TextButton(onClick = {
                 scope.launch {
-                    fetchWeather("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                    fetchWeatherByCityName("http://api.openweathermap.org/data/2.5/weather?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
                 }
 
             },
