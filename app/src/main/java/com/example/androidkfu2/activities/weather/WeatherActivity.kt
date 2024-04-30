@@ -67,21 +67,22 @@ class WeatherActivity : ComponentActivity() {
     }
 }
 
-enum class FetchStatus{
+private enum class FetchStatus{
     NONE, FETCHING, FETCHED
 }
 
 @Composable
 fun WeatherPage(userName: String){
 
+    //city for weather
     var cityEntered by remember {
         mutableStateOf("")
     }
 
+    //weather variables
     val weather = remember {
         mutableStateOf("")
     }
-
 
     val humidity = remember {
         mutableStateOf("")
@@ -91,6 +92,7 @@ fun WeatherPage(userName: String){
         mutableStateOf("")
     }
 
+    //fetching info
     val fetched = remember {
         mutableStateOf(FetchStatus.NONE)
     }
@@ -98,18 +100,16 @@ fun WeatherPage(userName: String){
 
     val scope = rememberCoroutineScope()
 
-    fun fetchPlace(placeUrl: String){
-        println("fetching place")
+    val client = OkHttpClient()
+    var responseString: String? = null
+    val gson = Gson()
+
+    fun fetchWeather(placeUrl: String){
         fetched.value = FetchStatus.FETCHING
+
         val placeRequest = Request.Builder()
             .url(placeUrl)
             .build()
-
-        val client = OkHttpClient()
-
-        var resp: String? = null
-        val gson = Gson()
-
 
         client.newCall(placeRequest).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -117,17 +117,18 @@ fun WeatherPage(userName: String){
             }
 
             override fun onResponse(call: Call, response: Response) {
-                println("place on response")
-                resp = response.body()?.string()
+                responseString = response.body()?.string()
+
                 val placeAdapter = gson.getAdapter(object : TypeToken<List<Map<String, Any?>>>() {})
-                val placeModel = placeAdapter.fromJson(resp)
-                println("place resp: $resp")
+                val placeModel = placeAdapter.fromJson(responseString)
+
                 val lat = placeModel[0]["lat"]
                 val lon = placeModel[0]["lon"]
 
-                val weatherUrl =
-                    "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b"
+                getWeather("https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=6b84d2def543fb0ba85c2790ab5c400b")
+            }
 
+            private fun getWeather(weatherUrl: String) {
                 val weatherRequest = Request.Builder()
                     .url(weatherUrl)
                     .build()
@@ -138,10 +139,9 @@ fun WeatherPage(userName: String){
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        println("weather on response: $weatherUrl")
-                        resp = response.body()?.string()
+                        responseString = response.body()?.string()
                         val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
-                        val weatherModel = weatherAdapter.fromJson(resp)["main"] as? Map<*, *>
+                        val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
 
                         if (weatherModel != null) {
                             val kel: Double = weatherModel["temp"].toString().toDouble()
@@ -155,9 +155,8 @@ fun WeatherPage(userName: String){
                 })
             }
         })
-
-        println("end fetching...")
     }
+
 
 
     Box(modifier = Modifier
@@ -198,7 +197,7 @@ fun WeatherPage(userName: String){
 
             TextButton(onClick = {
                 scope.launch {
-                    fetchPlace("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                    fetchWeather("http://api.openweathermap.org/geo/1.0/direct?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
                 }
 
             },
