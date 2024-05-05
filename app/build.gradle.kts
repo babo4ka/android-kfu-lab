@@ -80,6 +80,7 @@ dependencies {
     kapt("androidx.room:room-compiler:$room_version")
     implementation("com.squareup.okhttp3:okhttp:3.8.1")
     implementation("com.google.code.gson:gson:2.8.9")
+    implementation("io.coil-kt:coil-compose:2.6.0")
     //kapt("android.arch.persistence.room:compiler:$room_version")
     //annotationProcessor("androidx.room:room-compiler:$room_version")
 
