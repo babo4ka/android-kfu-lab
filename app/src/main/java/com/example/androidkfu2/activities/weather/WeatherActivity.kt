@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import coil.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.example.androidkfu2.R
 import com.example.androidkfu2.activities.InputField
 import com.example.androidkfu2.activities.ui.theme.AndroidKfu2Theme
@@ -108,6 +110,8 @@ private enum class FetchStatus{
 
 private val appKey = "6b84d2def543fb0ba85c2790ab5c400b"
 
+
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun WeatherPage(userName: String){
     disableSSLVerification()
@@ -133,15 +137,10 @@ fun WeatherPage(userName: String){
         mutableStateOf("")
     }
 
-    val ic = remember{
-        mutableStateOf<ImageBitmap?>(null)
-    }
-
     //fetching info
     val fetched = remember {
         mutableStateOf(FetchStatus.NONE)
     }
-
 
     val scope = rememberCoroutineScope()
 
@@ -181,6 +180,29 @@ fun WeatherPage(userName: String){
     }
 
 
+    fun buildIconStr(iconName:String):String{
+        return "https://openweathermap.org/img/wn/$iconName.png"
+    }
+
+    fun parseWeather(responseString: String?){
+        val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
+        val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
+
+        if (weatherModel != null) {
+            val kel: Double = weatherModel["temp"].toString().toDouble()
+            weather.value = Math.round((kel - 273.15)).toString()
+            humidity.value = weatherModel["humidity"].toString()
+            seaLevel.value = weatherModel["sea_level"].toString()
+
+            fetched.value = FetchStatus.FETCHED
+        }
+
+        val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
+        val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
+        icon.value = buildIconStr(weatherInfoMap?.get("icon").toString())
+        println(weatherInfoMap?.get("icon"))
+    }
+
     fun fetchWeatherByCoord() {
         fetched.value = FetchStatus.FETCHING
         val location = locationManager.getLastKnownLocation("gps")
@@ -198,22 +220,7 @@ fun WeatherPage(userName: String){
 
             override fun onResponse(call: Call, response: Response) {
                 responseString = response.body?.string()
-                val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
-                val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
-
-                if (weatherModel != null) {
-                    val kel: Double = weatherModel["temp"].toString().toDouble()
-                    weather.value = Math.round((kel - 273.15)).toString()
-                    humidity.value = weatherModel["humidity"].toString()
-                    seaLevel.value = weatherModel["sea_level"].toString()
-
-                    fetched.value = FetchStatus.FETCHED
-                }
-
-                val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
-                val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
-                icon.value = "https://openweathermap.org/img/wn/${weatherInfoMap?.get("icon")}.png"
-                println(weatherInfoMap?.get("icon"))
+                parseWeather(responseString)
             }
         })
     }
@@ -233,22 +240,7 @@ fun WeatherPage(userName: String){
 
             override fun onResponse(call: Call, response: Response) {
                 responseString = response.body?.string()
-                val weatherAdapter = gson.getAdapter(object : TypeToken<Map<String, Any?>>() {})
-                val weatherModel = weatherAdapter.fromJson(responseString)["main"] as? Map<*, *>
-
-                if (weatherModel != null) {
-                    val kel: Double = weatherModel["temp"].toString().toDouble()
-                    weather.value = Math.round((kel - 273.15)).toString()
-                    humidity.value = weatherModel["humidity"].toString()
-                    seaLevel.value = weatherModel["sea_level"].toString()
-
-                    fetched.value = FetchStatus.FETCHED
-                }
-
-                val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
-                val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
-                icon.value = "https://openweathermap.org/img/wn/${weatherInfoMap?.get("icon")}.png"
-                println(weatherInfoMap?.get("icon"))
+                parseWeather(responseString)
             }
         })
     }
@@ -354,13 +346,17 @@ fun WeatherPage(userName: String){
 
                         Spacer(modifier = Modifier.height(50.dp))
 
-                        AsyncImage(
+//                        AsyncImage(
+//                            model = icon.value,
+//                            error = painterResource(id = R.drawable.logo),
+//                            contentDescription = null,
+//                            contentScale = ContentScale.Fit,
+//                            modifier = Modifier.fillMaxSize()
+//                        )
+
+                        GlideImage(
                             model = icon.value,
-                            error = painterResource(id = R.drawable.logo),
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                            contentDescription = null)
                     }
                 }
             }
