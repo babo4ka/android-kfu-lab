@@ -3,15 +3,12 @@ package com.example.androidkfu2.activities.weather
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.location.Criteria
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,9 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import coil.compose.AsyncImage
+import com.example.androidkfu2.R
 import com.example.androidkfu2.activities.InputField
 import com.example.androidkfu2.activities.ui.theme.AndroidKfu2Theme
 import com.google.gson.Gson
@@ -62,6 +60,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.security.cert.X509Certificate
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 
 class WeatherActivity : ComponentActivity() {
@@ -85,14 +87,30 @@ class WeatherActivity : ComponentActivity() {
     }
 }
 
+fun disableSSLVerification() {
+    val trustAllCerts = arrayOf(object : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+        override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+    })
+
+    val sslContext = SSLContext.getInstance("SSL")
+    sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+    HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+}
+
+
+
 
 private enum class FetchStatus{
     NONE, FETCHING, FETCHED
 }
 
+private val appKey = "6b84d2def543fb0ba85c2790ab5c400b"
+
 @Composable
 fun WeatherPage(userName: String){
-
+    disableSSLVerification()
     //city for weather
     var cityEntered by remember {
         mutableStateOf("")
@@ -130,7 +148,9 @@ fun WeatherPage(userName: String){
     val client = OkHttpClient()
     var responseString: String?
     val gson = Gson()
+
     val context = LocalContext.current
+
     val locationManager: LocationManager =
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     if (ActivityCompat.checkSelfPermission(
@@ -150,6 +170,7 @@ fun WeatherPage(userName: String){
         // for ActivityCompat#requestPermissions for more details.
         return
     }
+
     val locationListener: LocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
             println("location ${location.latitude} : ${location.longitude}")
@@ -160,11 +181,12 @@ fun WeatherPage(userName: String){
     }
 
 
-
-    println("location ${locationManager.getLastKnownLocation("gps")}")
-
-    fun fetchWeatherByCoord(weatherUrl: String) {
+    fun fetchWeatherByCoord() {
         fetched.value = FetchStatus.FETCHING
+        val location = locationManager.getLastKnownLocation("gps")
+
+        val weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=${location?.latitude}&lon=${location?.longitude}&appid=$appKey"
+
         val weatherRequest = Request.Builder()
             .url(weatherUrl)
             .build()
@@ -190,6 +212,7 @@ fun WeatherPage(userName: String){
 
                 val weatherInfo = weatherAdapter.fromJson(responseString)["weather"] as? List<*>
                 val weatherInfoMap = weatherInfo?.get(0) as? Map<*, *>
+                icon.value = "https://openweathermap.org/img/wn/${weatherInfoMap?.get("icon")}.png"
                 println(weatherInfoMap?.get("icon"))
             }
         })
@@ -271,7 +294,7 @@ fun WeatherPage(userName: String){
 
             TextButton(onClick = {
                 scope.launch {
-                    fetchWeatherByCityName("http://api.openweathermap.org/data/2.5/weather?q=${cityEntered},643&appid=6b84d2def543fb0ba85c2790ab5c400b")
+                    fetchWeatherByCityName("http://api.openweathermap.org/data/2.5/weather?q=${cityEntered},643&appid=$appKey")
                 }
 
             },
@@ -281,7 +304,24 @@ fun WeatherPage(userName: String){
                     .height(45.dp)
                     .width(200.dp)
             ) {
-                Text(text = "Узнать погоду")
+                Text(text = "Get weather by city name")
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+            
+            TextButton(onClick = {
+                scope.launch {
+                    fetchWeatherByCoord()
+                }
+
+            },
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .background(color = Color.Black)
+                    .height(45.dp)
+                    .width(200.dp)
+            ) {
+                Text(text = "Get weather by location")
             }
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -316,6 +356,7 @@ fun WeatherPage(userName: String){
 
                         AsyncImage(
                             model = icon.value,
+                            error = painterResource(id = R.drawable.logo),
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
