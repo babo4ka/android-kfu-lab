@@ -36,10 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -47,10 +44,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import coil.compose.AsyncImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.androidkfu2.R
 import com.example.androidkfu2.activities.InputField
 import com.example.androidkfu2.activities.ui.theme.AndroidKfu2Theme
 import com.google.gson.Gson
@@ -63,6 +58,7 @@ import okhttp3.Request
 import okhttp3.Response
 import qrcode.QRCode
 import java.io.IOException
+import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
@@ -98,7 +94,7 @@ fun disableSSLVerification() {
     })
 
     val sslContext = SSLContext.getInstance("SSL")
-    sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+    sslContext.init(null, trustAllCerts, SecureRandom())
     HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
 }
 
