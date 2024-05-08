@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.androidkfu2.R
+import com.example.androidkfu2.activities.qr.QRCodeActivity
 import com.example.androidkfu2.activities.weather.WeatherActivity
 import com.example.androidkfu2.database.databases.UsersDatabase
 import com.example.androidkfu2.database.view_models.UserViewModel
@@ -193,7 +194,7 @@ fun LoginPage(uvm: UserViewModel?){
                                 Toast.LENGTH_SHORT)
                             toast.show()
                         }else{
-                            val intent = Intent(context, WeatherActivity::class.java)
+                            val intent = Intent(context, QRCodeActivity::class.java)
                             intent.putExtra("userName", userName)
                             startActivity(context, intent, null)
                         }

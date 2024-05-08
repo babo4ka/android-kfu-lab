@@ -82,7 +82,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+    implementation("io.github.g0dkar:qrcode-kotlin:4.1.1")
+
     //kapt("android.arch.persistence.room:compiler:$room_version")
     //annotationProcessor("androidx.room:room-compiler:$room_version")
-
 }

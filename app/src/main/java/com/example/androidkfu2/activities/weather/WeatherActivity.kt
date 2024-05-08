@@ -61,6 +61,7 @@ import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import qrcode.QRCode
 import java.io.IOException
 import java.security.cert.X509Certificate
 import javax.net.ssl.HttpsURLConnection
@@ -178,7 +179,6 @@ fun WeatherPage(userName: String){
         override fun onProviderEnabled(provider: String) {}
         override fun onProviderDisabled(provider: String) {}
     }
-
 
     fun buildIconStr(iconName:String):String{
         return "https://openweathermap.org/img/wn/$iconName.png"
