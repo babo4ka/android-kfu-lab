@@ -56,7 +56,6 @@ import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import qrcode.QRCode
 import java.io.IOException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
