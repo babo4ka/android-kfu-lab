@@ -84,6 +84,15 @@ dependencies {
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     implementation("io.github.g0dkar:qrcode-kotlin:4.1.1")
 
+    // For AppWidgets support
+    implementation( "androidx.glance:glance-appwidget:1.0.0" )
+
+    // For interop APIs with Material 2
+    implementation( "androidx.glance:glance-material:1.0.0" )
+
+    // For interop APIs with Material 3
+    implementation( "androidx.glance:glance-material3:1.0.0" )
+
     //kapt("android.arch.persistence.room:compiler:$room_version")
     //annotationProcessor("androidx.room:room-compiler:$room_version")
 }
